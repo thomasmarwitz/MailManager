@@ -1,6 +1,7 @@
 import smtplib
 from string import Template
 from collections import namedtuple
+import re
 
 # load sensitive data
 from dotenv import load_dotenv
@@ -15,12 +16,23 @@ class Message:
 
     def __init__(self, file_name: str) -> None:
         self.txt: str= open(file_name).read()
+        self.subject: str = self.getSubject()
 
     def replaceValues(self, data: dict[str, str]) -> str:
         text: str = self.txt # don't modify original txt
         for key, value in data.items():
             text = text.replace("{{" + key + "}}", value)
         return text
+
+    def getSubject(self) -> str:
+        pattern: str = r"<!--\s+Betreff=\[([^\]]+)\]\s+-->"
+        
+        mo: re.Match = re.search(pattern, self.txt)
+        if mo:
+            return mo.group(1)
+        else:
+            return SystemExit("Couldn't extract Subject for Email")
+
 
 Person = namedtuple('Person', ['name', 'email'])
 
@@ -56,16 +68,16 @@ class Mailer:
         
         msg['From'] =   formataddr((str(Header('Von Sender', 'utf-8')), self.email))
         msg['To'] =     formataddr((str(Header('An Empfaenger', "utf-8")), self.email))
-        msg['Subject'] = "Automated Test E-Mail"
+        msg['Subject'] = self.message.subject #"Automated Test E-Mail"
         
         msg.attach(MIMEText(
-            self.message.replaceValues({}),
+            self.message.replaceValues({}), 
             "html")
         )
 
         self.server.send_message(msg)
 
-    def send_invitation(toPerson: Person, attachedPerson: Person):
+    def send_invitation(self, toPerson: Person, attachedPerson: Person):
         msg = MIMEMultipart()
         
         msg['From'] =   formataddr((str(Header('Von Sender', 'utf-8')), self.email))
