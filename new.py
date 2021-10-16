@@ -4,6 +4,7 @@ from string import Template
 # load sensitive data
 from dotenv import load_dotenv
 import os
+import pandas as pd
 
 load_dotenv()
 
@@ -24,3 +25,7 @@ class Message:
         for key, value in data.items():
             text = text.replace("{{" + key + "}}", value)
         return text
+
+
+for (name1, email1, name2, email2) in zip(df["Name1"], df["Email1"], df["Name2"], df["Email2"]):
+    pass
