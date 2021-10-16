@@ -45,8 +45,8 @@ from email.utils import formataddr
 
 class Mailer:
 
-    def __init__(self, message_file="message.html"):
-        self.message = Message(message_file)
+    def __init__(self, message_file): # required: message
+        self.message: Message = Message(message_file)
 
         try:
             self.email:             str = os.environ["EMAIL"]
@@ -77,12 +77,24 @@ class Mailer:
 
         self.server.send_message(msg)
 
-    def send_invitation(self, toPerson: Person, attachedPerson: Person):
+    def _create_msg(self, toPerson: Person, attachedPerson: Person) -> MIMEMultipart:
         msg = MIMEMultipart()
         
         msg['From'] =   formataddr((str(Header('Von Sender', 'utf-8')), self.email))
-        msg['To'] =     formataddr((str(Header('An Empfaenger', "utf-8")), self.email))
-        msg['Subject'] = "Automated Test E-Mail"
+        msg['To'] =     formataddr((str(Header(toPerson.name, "utf-8")), toPerson.email))
+        msg['Subject'] = self.message.subject
+        
+        # body
+        msg.attach(MIMEText(
+            self.message.replaceValues(dict(
+                NAME=toPerson.name,
+                PARTNER=attachedPerson.name,
+                EMAIL_PARTNER=attachedPerson.email,
+            ))
+        ))
+
+    def send_invitation(self, toPerson: Person, attachedPerson: Person):
+        self.server.send_message(self._create_msg(toPerson, attachedPerson))
 
 class Manager:
 
@@ -91,6 +103,7 @@ class Manager:
         self.mailer: Mailer = Mailer()
         
     def process_rowwise(self):
+        # iterate over matches
         for (name1, email1, name2, email2) in zip(self.df["Name1"], self.df["Email1"], self.df["Name2"], self.df["Email2"]):
             self._process_pairs(
                 Person(name1, email1),
@@ -99,10 +112,11 @@ class Manager:
 
     def _process_pairs(self, person1: Person, person2: Person):
         # message person 1
-
+        self.mailer.send_invitation(person1, person2)
 
         # message person 2
-        pass
+        self.mailer.send_invitation(person2, person1)
+        
 
 
 manager: Manager = Manager("Zuordnung.xlsx")
