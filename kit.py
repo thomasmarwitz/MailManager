@@ -1,8 +1,5 @@
 import smtplib
 from string import Template
-from dotenv import load_dotenv
-
-load_dotenv()
 
 host_adress = "smtp.kit.edu"
 port = 587
