@@ -26,6 +26,20 @@ class Message:
             text = text.replace("{{" + key + "}}", value)
         return text
 
+class Manager:
 
-for (name1, email1, name2, email2) in zip(df["Name1"], df["Email1"], df["Name2"], df["Email2"]):
-    pass
+    def __init__(self, excel_file: str):
+        self.df: pd.DataFrame = pd.read_excel(excel_file)
+        
+    def process_rowwise(self):
+        for (name1, email1, name2, email2) in zip(self.df["Name1"], self.df["Email1"], self.df["Name2"], self.df["Email2"]):
+            pass
+
+manager: Manager = Manager("Zuordnung.xlsx")
+
+
+# email stuff
+from email.header import Header
+from email.utils import formataddr
+
+formataddr((str(Header('Someone Somewhere', 'utf-8')), 'xxxxx@gmail.com'))
