@@ -1,5 +1,6 @@
 import smtplib
 from string import Template
+from collections import namedtuple
 
 # load sensitive data
 from dotenv import load_dotenv
@@ -21,14 +22,7 @@ class Message:
             text = text.replace("{{" + key + "}}", value)
         return text
 
-class Manager:
-
-    def __init__(self, excel_file: str):
-        self.df: pd.DataFrame = pd.read_excel(excel_file)
-        
-    def process_rowwise(self):
-        for (name1, email1, name2, email2) in zip(self.df["Name1"], self.df["Email1"], self.df["Name2"], self.df["Email2"]):
-            pass
+Person = namedtuple('Person', ['name', 'email'])
 
 
 # email stuff
@@ -39,7 +33,9 @@ from email.utils import formataddr
 
 class Mailer:
 
-    def __init__(self):
+    def __init__(self, message_file="message.html"):
+        self.message = Message(message_file)
+
         try:
             self.email:             str = os.environ["EMAIL"]
             self.password:          str = os.environ["PASSWORD"]
@@ -54,7 +50,6 @@ class Mailer:
         self.server.starttls()
         self.server.login(self.email, self.password)
 
-        
     
     def send_test_message(self):
         msg = MIMEMultipart()
@@ -64,18 +59,38 @@ class Mailer:
         msg['Subject'] = "Automated Test E-Mail"
         
         msg.attach(MIMEText(
-            Message("message.html").replaceValues({}),
+            self.message.replaceValues({}),
             "html")
         )
 
         self.server.send_message(msg)
 
-
-
+    def send_invitation(toPerson: Person, attachedPerson: Person):
+        msg = MIMEMultipart()
         
+        msg['From'] =   formataddr((str(Header('Von Sender', 'utf-8')), self.email))
+        msg['To'] =     formataddr((str(Header('An Empfaenger', "utf-8")), self.email))
+        msg['Subject'] = "Automated Test E-Mail"
+
+class Manager:
+
+    def __init__(self, excel_file: str):
+        self.df: pd.DataFrame = pd.read_excel(excel_file)
+        self.mailer: Mailer = Mailer()
+        
+    def process_rowwise(self):
+        for (name1, email1, name2, email2) in zip(self.df["Name1"], self.df["Email1"], self.df["Name2"], self.df["Email2"]):
+            self._process_pairs(
+                Person(name1, email1),
+                Person(name2, email2)
+            )
+
+    def _process_pairs(self, person1: Person, person2: Person):
+        # message person 1
+
+
+        # message person 2
+        pass
 
 
 manager: Manager = Manager("Zuordnung.xlsx")
-
-
-
