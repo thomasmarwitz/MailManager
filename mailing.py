@@ -79,6 +79,7 @@ class Mailer:
 
     
     def send_test_message(self):
+        logging.debug("generating test message")
         msg = MIMEMultipart()
         
         msg['From'] =   formataddr((str(Header('Von Sender', 'utf-8')), self.email))
@@ -149,7 +150,9 @@ class Manager:
 
         # message person 2
         self.mailer.send_invitation(person2, person1)
-        
+    
+    def get_pairs(self) -> list[str]:
+        return [name1 + " - " + name2 for name1, name2 in zip(self.df["Name1"], self.df["Name2"])]
 
 class Question:
 
@@ -184,13 +187,13 @@ manager: Manager = Manager(
 
 question: Question = Question(print, input, ignore_case=True)
 
-print("loaded data:\n", manager.df)
+print("loaded data:\n" + "\n".join(manager.get_pairs()))
 data_valid: str = question.ask_user("Is this data correct?", ["y", "n"])
 if data_valid == "n":
     logging.critical("the process was cancelled by the user after data validation")
     sys.exit(-1)
 
-send_test: str = question.ask_user("Send test message?", ["y", "n"])
+send_test: str = question.ask_user("Send test message? [to your own address]", ["y", "n"])
 if send_test == "y":
     manager.send_test()
     send_all: str = question.ask_user("Test message ok? Start sending messages?", ["y", "n"])
