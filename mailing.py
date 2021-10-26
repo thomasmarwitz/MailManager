@@ -183,12 +183,19 @@ manager: Manager = Manager(
 )
 
 question: Question = Question(print, input, ignore_case=True)
+
+print("loaded data:\n", manager.df)
+data_valid: str = question.ask_user("Is this data correct?", ["y", "n"])
+if data_valid == "n":
+    logging.critical("the process was cancelled by the user after data validation")
+    sys.exit(-1)
+
 send_test: str = question.ask_user("Send test message?", ["y", "n"])
 if send_test == "y":
     manager.send_test()
     send_all: str = question.ask_user("Test message ok? Start sending messages?", ["y", "n"])
-    if not send_all:
-        logging.critical("the process was cancelled by the user")
+    if send_all == "n":
+        logging.critical("the process was cancelled by the user after test message")
         sys.exit(-1)
 
 
