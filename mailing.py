@@ -87,8 +87,8 @@ class Mailer:
         logging.debug("generating test message")
         msg = MIMEMultipart()
         
-        msg['From'] =   formataddr((str(Header('Von Sender', 'utf-8')), self.email))
-        msg['To'] =     formataddr((str(Header('An Empfaenger', "utf-8")), self.email))
+        msg['From'] =   formataddr((str(Header(self.sender, 'utf-8')), self.email))
+        msg['To'] =     formataddr((str(Header('An Test Empfaenger', "utf-8")), self.email))
         msg['Subject'] = self.message.subject #"Automated Test E-Mail"
         
         msg.attach(MIMEText(
@@ -99,7 +99,7 @@ class Mailer:
         self.server.send_message(msg)
         logging.debug("message sent")
 
-    def _create_msg(self, toPerson: Person, attachedPerson: Person, is_test: False) -> MIMEMultipart:
+    def _create_msg(self, toPerson: Person, attachedPerson: Person, is_test: bool = False) -> MIMEMultipart:
         msg = MIMEMultipart()
         
         msg['From'] =   formataddr((str(Header(self.sender, 'utf-8')), self.email))
@@ -123,7 +123,7 @@ class Mailer:
 
     def send_invitation(self, toPerson: Person, attachedPerson: Person):
         logging.debug(f"sending message to {toPerson.name}")
-        self.server.send_message(self._create_msg(toPerson, attachedPerson))
+        self.server.send_message(self._create_msg(toPerson, attachedPerson, ))
         logging.debug(f"message sent")
 
 class Manager:
