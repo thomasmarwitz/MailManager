@@ -59,6 +59,7 @@ class Mailer:
             self.password:          str = os.environ["PASSWORD"]
             self.host_address:      str = os.environ["HOST_ADDRESS"]
             self.port:              str = os.environ["PORT"]
+            self.sender:            str = os.environ["SENDER"]
         except KeyError:
             print("Please specify EMAIL and PASSWORD in the .env file")
             raise SystemExit
@@ -82,13 +83,14 @@ class Mailer:
             self.message.replaceValues({}), 
             "html")
         )
-
+        logging.debug("sending test message")
         self.server.send_message(msg)
+        logging.debug("message sent")
 
     def _create_msg(self, toPerson: Person, attachedPerson: Person) -> MIMEMultipart:
         msg = MIMEMultipart()
         
-        msg['From'] =   formataddr((str(Header('Von Sender', 'utf-8')), self.email))
+        msg['From'] =   formataddr((str(Header(self.sender, 'utf-8')), self.email))
         msg['To'] =     formataddr((str(Header(toPerson.name, "utf-8")), toPerson.email))
         msg['Subject'] = self.message.subject
         
@@ -135,7 +137,7 @@ class Manager:
         self.mailer.send_invitation(person2, person1)
         
 
-
+logging.debug("STARTED PROGRAM")
 manager: Manager = Manager(
     excel_file="Zuordnung.xlsx", 
     message_file="message.html"
