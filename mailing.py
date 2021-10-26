@@ -150,7 +150,7 @@ class Manager:
                 Person(name1, email1),
                 Person(name2, email2)
             )
-        logging.info("finished processing paris")
+        logging.info("finished processing pairs")
 
     def _process_pairs(self, person1: Person, person2: Person):
         logging.info(f"process pair: {person1.name} & {person2.name}")
