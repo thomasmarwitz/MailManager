@@ -148,6 +148,25 @@ class Manager:
         self.mailer.send_invitation(person2, person1)
         
 
+class Question:
+
+    def __init__(self, question: str, output_func: function, input_func: function) -> None:
+        self.question: str = question
+        self.output: function = output_func
+        self.input: function = input_func
+    
+    def ask_user(self, accepted: list[str]) -> str:
+        while True: # ask until valid input
+            self.output(self.question)
+            answer: str = self.input("> ")
+            if answer in accepted:
+                return answer
+            else:
+                self.output(f"wrong input, must be from: {accepted}\n")
+            
+
+
+
 logging.info("STARTED PROGRAM")
 manager: Manager = Manager(
     excel_file="Zuordnung.xlsx", 
