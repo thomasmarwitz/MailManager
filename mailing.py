@@ -177,30 +177,36 @@ class Question:
             return answer in accepted
             
 
+def main() -> str:
+    
+    manager: Manager = Manager(
+        excel_file="Zuordnung.xlsx", 
+        message_file="message.html"
+    )
+
+    question: Question = Question(print, input, ignore_case=True)
+
+    print("loaded data:\n" + "\n".join(manager.get_pairs()))
+    data_valid: str = question.ask_user("Is this data correct?", ["y", "n"])
+    if data_valid == "n":
+        logging.critical("the process was cancelled by the user after data validation")
+        return "sending cancelled (data probably invalid)"
+
+    send_test: str = question.ask_user("Send test message? [to your own address]", ["y", "n"])
+    if send_test == "y":
+        manager.send_test()
+        send_all: str = question.ask_user("Test message ok? Start sending messages?", ["y", "n"])
+        if send_all == "n":
+            logging.critical("the process was cancelled by the user after test message")
+            return "sending cancelled (test message probably invalid"
 
 
-logging.info("STARTED PROGRAM")
-manager: Manager = Manager(
-    excel_file="Zuordnung.xlsx", 
-    message_file="message.html"
-)
+    manager.process_rowwise()
+    return "SUCCESS"
+    
 
-question: Question = Question(print, input, ignore_case=True)
-
-print("loaded data:\n" + "\n".join(manager.get_pairs()))
-data_valid: str = question.ask_user("Is this data correct?", ["y", "n"])
-if data_valid == "n":
-    logging.critical("the process was cancelled by the user after data validation")
-    sys.exit(-1)
-
-send_test: str = question.ask_user("Send test message? [to your own address]", ["y", "n"])
-if send_test == "y":
-    manager.send_test()
-    send_all: str = question.ask_user("Test message ok? Start sending messages?", ["y", "n"])
-    if send_all == "n":
-        logging.critical("the process was cancelled by the user after test message")
-        sys.exit(-1)
-
-
-manager.process_rowwise()
-logging.info("FINISHED PROGRAM")
+if __name__ == "__main__":
+    logging.info("STARTED PROGRAM")
+    print("\n ==>", main())
+    logging.info("FINISHED PROGRAM")
+    
