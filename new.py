@@ -2,12 +2,14 @@ import smtplib
 from string import Template
 from collections import namedtuple
 import re
+import logging
 
 # load sensitive data
 from dotenv import load_dotenv
 import os
 import pandas as pd
 
+logging.basicConfig(filename="mailing.log", level=logging.INFO)
 load_dotenv()
 
 # alvindeguzman@hotmail.de
@@ -22,6 +24,9 @@ class Message:
         text: str = self.txt # don't modify original txt
         for key, value in data.items():
             text = text.replace("{{" + key + "}}", value)
+        if "{{" in text:
+            logging.warning("there may exist parameters in the message that haven't been replaced")
+
         return text
 
     def getSubject(self) -> str:
@@ -31,6 +36,7 @@ class Message:
         if mo:
             return mo.group(1)
         else:
+            logging.critical("Couldn't extract Subject for Email")
             return SystemExit("Couldn't extract Subject for Email")
 
 
@@ -58,9 +64,11 @@ class Mailer:
             raise SystemExit
 
         self.server = smtplib.SMTP(host=self.host_address, port=self.port)
-        self.server.set_debuglevel(0)
+        self.server.set_debuglevel(1)
         self.server.starttls()
+        logging.debug("login...")
         self.server.login(self.email, self.password)
+        logging.debug("logged in")
 
     
     def send_test_message(self):
@@ -90,20 +98,27 @@ class Mailer:
                 NAME=toPerson.name,
                 PARTNER=attachedPerson.name,
                 EMAIL_PARTNER=attachedPerson.email,
-            ))
+            ),
+            "html")
         ))
+        return msg
 
     def send_invitation(self, toPerson: Person, attachedPerson: Person):
+        logging.debug(f"sending message to {toPerson.name}")
         self.server.send_message(self._create_msg(toPerson, attachedPerson))
+        logging.debug(f"message sent")
 
 class Manager:
 
-    def __init__(self, excel_file: str):
+    def __init__(self, excel_file: str, message_file: str):
+        logging.debug("loading excel sheet")
         self.df: pd.DataFrame = pd.read_excel(excel_file)
-        self.mailer: Mailer = Mailer()
+        logging.debug("finished loading excel sheet")
+        self.mailer: Mailer = Mailer(message_file)
         
     def process_rowwise(self):
         # iterate over matches
+        logging.debug("processing pairs:")
         for (name1, email1, name2, email2) in zip(self.df["Name1"], self.df["Email1"], self.df["Name2"], self.df["Email2"]):
             self._process_pairs(
                 Person(name1, email1),
@@ -111,6 +126,7 @@ class Manager:
             )
 
     def _process_pairs(self, person1: Person, person2: Person):
+        logging.info(f"process pair: {person1.name} & {person2.name}")
         # message person 1
         self.mailer.send_invitation(person1, person2)
 
@@ -119,4 +135,8 @@ class Manager:
         
 
 
-manager: Manager = Manager("Zuordnung.xlsx")
+manager: Manager = Manager(
+    excel_file="Zuordnung.xlsx", 
+    message_file="message.html"
+)
+manager.process_rowwise()
