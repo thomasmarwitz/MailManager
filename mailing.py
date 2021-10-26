@@ -99,7 +99,7 @@ class Mailer:
         self.server.send_message(msg)
         logging.debug("message sent")
 
-    def _create_msg(self, toPerson: Person, attachedPerson: Person) -> MIMEMultipart:
+    def _create_msg(self, toPerson: Person, attachedPerson: Person, is_test: False) -> MIMEMultipart:
         msg = MIMEMultipart()
         
         msg['From'] =   formataddr((str(Header(self.sender, 'utf-8')), self.email))
@@ -107,14 +107,18 @@ class Mailer:
         msg['Subject'] = self.message.subject
         
         # body
-        msg.attach(MIMEText(
-            self.message.replaceValues(dict(
+        message_text: str = self.message.replaceValues(dict(
                 NAME=toPerson.name,
                 PARTNER=attachedPerson.name,
                 EMAIL_PARTNER=attachedPerson.email,
-            )),
+        ))
+        msg.attach(MIMEText(
+            message_text,
             "html"
         ))
+
+        if is_test: # only message preview
+            msg["Text"] = message_text
         return msg
 
     def send_invitation(self, toPerson: Person, attachedPerson: Person):
@@ -159,13 +163,15 @@ class Manager:
     def get_pairs(self) -> list[str]:
         return [name1 + " - " + name2 for name1, name2 in zip(self.df[FIRST_PAIR_NAME], self.df[SECOND_PAIR_NAME])]
     
-    def validate_message(self):
+    def validate_message(self) -> str:
         self.mailer.message.getSubject()
 
         toPerson: Person = Person(name=self.df[FIRST_PAIR_NAME][0], email=self.df[FIRST_PAIR_EMAIL][0])
         attachedPerson: Person = Person(name=self.df[SECOND_PAIR_NAME][0], email=self.df[SECOND_PAIR_EMAIL][0])
         
-        print(self.mailer._create_msg(toPerson, attachedPerson))
+        msg: MIMEMultipart = self.mailer._create_msg(toPerson, attachedPerson, is_test=True)
+
+        return f'From:    {msg["From"]}\nTo:      {msg["To"]}\nSubject: {msg["Subject"]}\nBody:\n{msg["Text"]}'
 
 
 class Question:
@@ -180,6 +186,7 @@ class Question:
             self.output(question)
             answer: str = self.input("> ")
             if self._is_accepted(answer, accepted):
+                print()
                 return answer
             else:
                 self.output(f"wrong input, must be from: {accepted}\n")
@@ -197,10 +204,17 @@ def main() -> str:
         excel_file="Zuordnung.xlsx", 
         message_file="message.html"
     )
-
-    manager.validate_message()
-
     question: Question = Question(print, input, ignore_case=True)
+
+    ########## MESSAGE VALIDATION ##############
+    print("Preview of first message:\n" + "=" * 80)
+    print(manager.validate_message())
+    print("=" * 80)
+
+    message_valid: str = question.ask_user("Is this message correct?", ["y", "n"])
+    if message_valid == "n":
+        logging.critical("the process was cancelled by the user after message validation")
+        return "sending cancelled (message probably invalid)"    
 
     ########## DATA VALIDATION ##############
     print("loaded data:\n" + "\n".join(manager.get_pairs()))
@@ -217,8 +231,6 @@ def main() -> str:
         if send_all == "n":
             logging.critical("the process was cancelled by the user after test message")
             return "sending cancelled (test message probably invalid"
-    
-    ########## MESSAGE VALIDATION ##############
     
     manager.process_rowwise()
     return "SUCCESS"
