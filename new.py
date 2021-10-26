@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 import os
 import pandas as pd
 
-logging.basicConfig(filename="mailing.log", level=logging.INFO)
+logging.basicConfig(filename="mailing.log", level=logging.DEBUG)
 load_dotenv()
 
 # alvindeguzman@hotmail.de
@@ -64,9 +64,9 @@ class Mailer:
             raise SystemExit
 
         self.server = smtplib.SMTP(host=self.host_address, port=self.port)
-        self.server.set_debuglevel(1)
+        self.server.set_debuglevel(0)
         self.server.starttls()
-        logging.debug("login...")
+        logging.debug(f"login with {self.email}")
         self.server.login(self.email, self.password)
         logging.debug("logged in")
 
@@ -98,8 +98,8 @@ class Mailer:
                 NAME=toPerson.name,
                 PARTNER=attachedPerson.name,
                 EMAIL_PARTNER=attachedPerson.email,
-            ),
-            "html")
+            )),
+            "html"
         ))
         return msg
 
@@ -118,12 +118,13 @@ class Manager:
         
     def process_rowwise(self):
         # iterate over matches
-        logging.debug("processing pairs:")
+        logging.info("processing pairs:")
         for (name1, email1, name2, email2) in zip(self.df["Name1"], self.df["Email1"], self.df["Name2"], self.df["Email2"]):
             self._process_pairs(
                 Person(name1, email1),
                 Person(name2, email2)
             )
+        logging.info("finished processing paris")
 
     def _process_pairs(self, person1: Person, person2: Person):
         logging.info(f"process pair: {person1.name} & {person2.name}")
