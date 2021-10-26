@@ -150,19 +150,25 @@ class Manager:
 
 class Question:
 
-    def __init__(self, question: str, output_func: function, input_func: function) -> None:
-        self.question: str = question
+    def __init__(self, output_func: function, input_func: function, ignore_case: bool) -> None:
         self.output: function = output_func
         self.input: function = input_func
+        self.ignore_case: bool = ignore_case
     
-    def ask_user(self, accepted: list[str]) -> str:
+    def ask_user(self, question: str, accepted: list[str]) -> str:
         while True: # ask until valid input
-            self.output(self.question)
+            self.output(question)
             answer: str = self.input("> ")
-            if answer in accepted:
+            if self._is_accepted(answer, accepted):
                 return answer
             else:
                 self.output(f"wrong input, must be from: {accepted}\n")
+
+    def _is_accepted(self, answer: str, accepted: list[str]):
+        if self.ignore_case:
+            return answer.lower() in [s.lower() for s in accepted]
+        else:
+            return answer in accepted
             
 
 
@@ -172,5 +178,9 @@ manager: Manager = Manager(
     excel_file="Zuordnung.xlsx", 
     message_file="message.html"
 )
+
+question: Question = Question(print, input, ignore_case=True)
+question.ask_user("Send test message?", ["y", "n"])
+
 manager.process_rowwise()
 logging.info("FINISHED PROGRAM")
