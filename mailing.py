@@ -128,6 +128,9 @@ class Manager:
 
         logging.debug("finished loading excel sheet")
         self.mailer: Mailer = Mailer(message_file)
+
+    def send_test(self) -> None:
+        self.mailer.send_test_message()
         
     def process_rowwise(self):
         # iterate over matches
@@ -150,9 +153,9 @@ class Manager:
 
 class Question:
 
-    def __init__(self, output_func: function, input_func: function, ignore_case: bool) -> None:
-        self.output: function = output_func
-        self.input: function = input_func
+    def __init__(self, output_func, input_func, ignore_case: bool) -> None:
+        self.output = output_func
+        self.input = input_func
         self.ignore_case: bool = ignore_case
     
     def ask_user(self, question: str, accepted: list[str]) -> str:
@@ -180,7 +183,14 @@ manager: Manager = Manager(
 )
 
 question: Question = Question(print, input, ignore_case=True)
-question.ask_user("Send test message?", ["y", "n"])
+send_test: str = question.ask_user("Send test message?", ["y", "n"])
+if send_test == "y":
+    manager.send_test()
+    send_all: str = question.ask_user("Test message ok? Start sending messages?", ["y", "n"])
+    if not send_all:
+        logging.critical("the process was cancelled by the user")
+        sys.exit(-1)
+
 
 manager.process_rowwise()
 logging.info("FINISHED PROGRAM")
