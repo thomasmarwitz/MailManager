@@ -3,13 +3,14 @@ from string import Template
 from collections import namedtuple
 import re
 import logging
+import sys
 
 # load sensitive data
 from dotenv import load_dotenv
 import os
 import pandas as pd
 
-logging.basicConfig(filename="mailing.log", level=logging.DEBUG)
+logging.basicConfig(filename="mailing.log", format='%(levelname)s:%(asctime)s:%(message)s', level=logging.DEBUG)
 load_dotenv()
 
 # alvindeguzman@hotmail.de
@@ -17,7 +18,12 @@ load_dotenv()
 class Message:
 
     def __init__(self, file_name: str) -> None:
-        self.txt: str= open(file_name).read()
+        try:
+            self.txt: str= open(file_name).read()
+        except FileNotFoundError:
+            logging.critical(f"couldn't find/load the file you specified: {file_name}")
+            sys.exit(-1)
+            
         self.subject: str = self.getSubject()
 
     def replaceValues(self, data: dict[str, str]) -> str:
@@ -37,7 +43,6 @@ class Message:
             return mo.group(1)
         else:
             logging.critical("Couldn't extract Subject for Email")
-            import sys
             sys.exit(-1)
 
 
@@ -115,7 +120,12 @@ class Manager:
 
     def __init__(self, excel_file: str, message_file: str):
         logging.debug("loading excel sheet")
-        self.df: pd.DataFrame = pd.read_excel(excel_file)
+        try:
+            self.df: pd.DataFrame = pd.read_excel(excel_file)
+        except FileNotFoundError:
+            logging.critical(f"couldn't find/load the file you specified: {excel_file}")
+            sys.exit(-1)
+
         logging.debug("finished loading excel sheet")
         self.mailer: Mailer = Mailer(message_file)
         
@@ -138,9 +148,10 @@ class Manager:
         self.mailer.send_invitation(person2, person1)
         
 
-logging.debug("STARTED PROGRAM")
+logging.info("STARTED PROGRAM")
 manager: Manager = Manager(
     excel_file="Zuordnung.xlsx", 
     message_file="message.html"
 )
 manager.process_rowwise()
+logging.info("FINISHED PROGRAM")
