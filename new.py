@@ -37,7 +37,8 @@ class Message:
             return mo.group(1)
         else:
             logging.critical("Couldn't extract Subject for Email")
-            return SystemExit("Couldn't extract Subject for Email")
+            import sys
+            sys.exit(-1)
 
 
 Person = namedtuple('Person', ['name', 'email'])
