@@ -13,6 +13,11 @@ import pandas as pd
 logging.basicConfig(filename="mailing.log", format='%(levelname)s:%(asctime)s:%(message)s', level=logging.DEBUG)
 load_dotenv()
 
+FIRST_PAIR_NAME     = "Name1"
+SECOND_PAIR_NAME    = "Name2"
+FIRST_PAIR_EMAIL    = "Email1"
+SECOND_PAIR_EMAIL   = "Email2"
+
 # alvindeguzman@hotmail.de
 
 class Message:
@@ -136,7 +141,7 @@ class Manager:
     def process_rowwise(self):
         # iterate over matches
         logging.info("processing pairs:")
-        for (name1, email1, name2, email2) in zip(self.df["Name1"], self.df["Email1"], self.df["Name2"], self.df["Email2"]):
+        for (name1, email1, name2, email2) in zip(self.df[FIRST_PAIR_NAME], self.df[FIRST_PAIR_EMAIL], self.df[SECOND_PAIR_NAME], self.df[SECOND_PAIR_EMAIL]):
             self._process_pairs(
                 Person(name1, email1),
                 Person(name2, email2)
@@ -152,7 +157,16 @@ class Manager:
         self.mailer.send_invitation(person2, person1)
     
     def get_pairs(self) -> list[str]:
-        return [name1 + " - " + name2 for name1, name2 in zip(self.df["Name1"], self.df["Name2"])]
+        return [name1 + " - " + name2 for name1, name2 in zip(self.df[FIRST_PAIR_NAME], self.df[SECOND_PAIR_NAME])]
+    
+    def validate_message(self):
+        self.mailer.message.getSubject()
+
+        toPerson: Person = Person(name=self.df[FIRST_PAIR_NAME][0], email=self.df[FIRST_PAIR_EMAIL][0])
+        attachedPerson: Person = Person(name=self.df[SECOND_PAIR_NAME][0], email=self.df[SECOND_PAIR_EMAIL][0])
+        
+        print(self.mailer._create_msg(toPerson, attachedPerson))
+
 
 class Question:
 
@@ -184,14 +198,18 @@ def main() -> str:
         message_file="message.html"
     )
 
+    manager.validate_message()
+
     question: Question = Question(print, input, ignore_case=True)
 
+    ########## DATA VALIDATION ##############
     print("loaded data:\n" + "\n".join(manager.get_pairs()))
     data_valid: str = question.ask_user("Is this data correct?", ["y", "n"])
     if data_valid == "n":
         logging.critical("the process was cancelled by the user after data validation")
         return "sending cancelled (data probably invalid)"
 
+    ########## MAILING VALIDATION ##############
     send_test: str = question.ask_user("Send test message? [to your own address]", ["y", "n"])
     if send_test == "y":
         manager.send_test()
@@ -199,8 +217,9 @@ def main() -> str:
         if send_all == "n":
             logging.critical("the process was cancelled by the user after test message")
             return "sending cancelled (test message probably invalid"
-
-
+    
+    ########## MESSAGE VALIDATION ##############
+    
     manager.process_rowwise()
     return "SUCCESS"
     
