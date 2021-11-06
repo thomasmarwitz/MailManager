@@ -34,7 +34,7 @@ class Message:
     def replaceValues(self, data: dict[str, str]) -> str:
         text: str = self.txt # don't modify original txt
         for key, value in data.items():
-            text = text.replace("{{" + key + "}}", value)
+            text = text.replace("{{" + key + "}}", str(value))
         if "{{" in text:
             logging.warning("there may exist parameters in the message that haven't been replaced")
 
@@ -51,7 +51,7 @@ class Message:
             sys.exit(-1)
 
 
-Person = namedtuple('Person', ['name', 'email'])
+Person = namedtuple('Person', ['name', 'email', 'studiengang', 'semester', 'stipstatus', 'teilname', 'präsenz', 'interessen'])
 
 
 # email stuff
@@ -111,6 +111,14 @@ class Mailer:
                 NAME=toPerson.name,
                 PARTNER=attachedPerson.name,
                 EMAIL_PARTNER=attachedPerson.email,
+                STUDIENGANG=attachedPerson.studiengang,
+                SEMESTER=attachedPerson.semester,
+                STIPSTATUS=attachedPerson.stipstatus,
+                INTERESSEN=attachedPerson.interessen,
+                PRÄSENZ=attachedPerson.präsenz,
+                TEILNAME=attachedPerson.teilname
+
+
         ))
         msg.attach(MIMEText(
             message_text,
@@ -125,6 +133,16 @@ class Mailer:
         logging.debug(f"sending message to {toPerson.name}")
         self.server.send_message(self._create_msg(toPerson, attachedPerson, ))
         logging.debug(f"message sent")
+
+def iter_row_wise(df):
+    n = len(df.index)
+    EMPTY_LIST = ["" for i in range(n)]
+    for i in range(n):
+        yield (
+            Person(df[FIRST_PAIR_NAME][i], df[FIRST_PAIR_EMAIL][i], df.get("Studiengang1", EMPTY_LIST)[i],  df.get("Semester1", EMPTY_LIST)[i], df.get("Stipstatus1", EMPTY_LIST)[i], df.get("Teilname1", EMPTY_LIST)[i],df.get("Präsenz1", EMPTY_LIST)[i], df.get("Interessen1", EMPTY_LIST)[i],),
+            Person(df[SECOND_PAIR_NAME][i], df[SECOND_PAIR_EMAIL][i], df.get("Studiengang2", EMPTY_LIST)[i], df.get("Semester2", EMPTY_LIST)[i], df.get("Stipstatus2", EMPTY_LIST)[i], df.get("Teilname2", EMPTY_LIST)[i],df.get("Präsenz2", EMPTY_LIST)[i], df.get("Interessen2", EMPTY_LIST)[i],),
+        )
+
 
 class Manager:
 
@@ -145,11 +163,13 @@ class Manager:
     def process_rowwise(self):
         # iterate over matches
         logging.info("processing pairs:")
-        for (name1, email1, name2, email2) in zip(self.df[FIRST_PAIR_NAME], self.df[FIRST_PAIR_EMAIL], self.df[SECOND_PAIR_NAME], self.df[SECOND_PAIR_EMAIL]):
+        for row_obj in iter_row_wise(self.df):
             self._process_pairs(
-                Person(name1, email1),
-                Person(name2, email2)
+                person1=row_obj[0],
+                person2=row_obj[1],
             )
+
+
         logging.info("finished processing pairs")
 
     def _process_pairs(self, person1: Person, person2: Person):
@@ -166,8 +186,9 @@ class Manager:
     def validate_message(self) -> str:
         self.mailer.message.getSubject()
 
-        toPerson: Person = Person(name=self.df[FIRST_PAIR_NAME][0], email=self.df[FIRST_PAIR_EMAIL][0])
-        attachedPerson: Person = Person(name=self.df[SECOND_PAIR_NAME][0], email=self.df[SECOND_PAIR_EMAIL][0])
+        person_storage = next(iter_row_wise(self.df))
+        toPerson = person_storage[0]
+        attachedPerson = person_storage[1]
         
         msg: MIMEMultipart = self.mailer._create_msg(toPerson, attachedPerson, is_test=True)
 
