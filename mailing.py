@@ -63,7 +63,7 @@ class Message:
         return text
 
     def get_subject(self) -> str:
-        pattern: str = r"<!--\s+Betreff=\[([^\]]+)\]\s+-->"
+        pattern: str = r"<!--\s+Subject=\[([^\]]+)\]\s+-->"
 
         mo: re.Match = re.search(pattern, self.txt)
         if mo:
@@ -78,13 +78,13 @@ Person = namedtuple(
     [
         "name",
         "email",
-        "hynr",
-        "studiengang",
+        "phonenr",
+        "degree_program",
         "semester",
-        "stipstatus",
-        "teilname",
-        "präsenz",
-        "interessen",
+        "scholarship_status",
+        "participation",
+        "onsite",
+        "interests",
     ],
 )
 
@@ -122,7 +122,7 @@ class Mailer:
         msg = MIMEMultipart()
 
         msg["From"] = formataddr((str(Header(self.sender, "utf-8")), self.email))
-        msg["To"] = formataddr((str(Header("An Test Empfaenger", "utf-8")), self.email))
+        msg["To"] = formataddr((str(Header("To Test Recipent", "utf-8")), self.email))
         msg["Subject"] = self.message.subject  # "Automated Test E-Mail"
 
         msg.attach(MIMEText(self.message.replace_values({}), "html"))
@@ -145,13 +145,13 @@ class Mailer:
                 NAME=to_person.name,
                 PARTNER=attached_person.name,
                 EMAIL_PARTNER=attached_person.email,
-                HY_NR_PARTNER=attached_person.hynr,
-                STUDIENGANG=attached_person.studiengang,
+                PHONE_NR_PARTNER=attached_person.phonenr,
+                DEGREE_PROGRAMM=attached_person.degree_program,
                 SEMESTER=attached_person.semester,
-                STIPSTATUS=attached_person.stipstatus,
-                INTERESSEN=attached_person.interessen,
-                PRÄSENZ=attached_person.präsenz,
-                TEILNAME=attached_person.teilname,
+                SCHOLARSHIP_STATUS=attached_person.scholarship_status,
+                INTERESTS=attached_person.interests,
+                ONSITE=attached_person.onsite,
+                PARTICIPATION=attached_person.participation,
             )
         )
         msg.attach(MIMEText(message_text, "html"))
@@ -179,24 +179,24 @@ def iter_row_wise(df: pd.DataFrame):
             Person(
                 df[FIRST_PAIR_NAME][i],
                 df[FIRST_PAIR_EMAIL][i],
-                df.get("HYNR1", EMPTY_LIST)[i],
-                df.get("Studiengang1", EMPTY_LIST)[i],
+                df.get("PhoneNr1", EMPTY_LIST)[i],
+                df.get("DegreeProgram1", EMPTY_LIST)[i],
                 df.get("Semester1", EMPTY_LIST)[i],
-                df.get("Stipstatus1", EMPTY_LIST)[i],
-                df.get("Teilname1", EMPTY_LIST)[i],
-                df.get("Präsenz1", EMPTY_LIST)[i],
-                df.get("Interessen1", EMPTY_LIST)[i],
+                df.get("ScholarshipStatus1", EMPTY_LIST)[i],
+                df.get("Participation1", EMPTY_LIST)[i],
+                df.get("OnSite1", EMPTY_LIST)[i],
+                df.get("Interests1", EMPTY_LIST)[i],
             ),
             Person(
                 df[SECOND_PAIR_NAME][i],
                 df[SECOND_PAIR_EMAIL][i],
-                df.get("HYNR2", EMPTY_LIST)[i],
-                df.get("Studiengang2", EMPTY_LIST)[i],
+                df.get("PhoneNr2", EMPTY_LIST)[i],
+                df.get("DegreeProgram2", EMPTY_LIST)[i],
                 df.get("Semester2", EMPTY_LIST)[i],
-                df.get("Stipstatus2", EMPTY_LIST)[i],
-                df.get("Teilname2", EMPTY_LIST)[i],
-                df.get("Präsenz2", EMPTY_LIST)[i],
-                df.get("Interessen2", EMPTY_LIST)[i],
+                df.get("ScholarshipStatus2", EMPTY_LIST)[i],
+                df.get("Participation2", EMPTY_LIST)[i],
+                df.get("OnSite2", EMPTY_LIST)[i],
+                df.get("Interests2", EMPTY_LIST)[i],
             ),
         )
 
